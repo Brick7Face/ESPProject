@@ -26,7 +26,7 @@
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_MotorShield.h>
-#include "utility/Adafruit_MS_PWMServoDriver.h"
+#include <Servo.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_LSM9DS0.h>
 #include "index.h"
@@ -36,7 +36,8 @@
  **********************************************/
 Adafruit_MotorShield AFMS = Adafruit_MotorShield();                                 //create motor shield object with default I2C address, motor object, and 
 Adafruit_DCMotor *myMotor = AFMS.getMotor(3);                                       //stepper motor for servo. Number indicates the port
-Adafruit_StepperMotor *myMotorS = AFMS.getStepper(200, 1);                          //second number indicates port
+//Adafruit_StepperMotor *myMotorS = AFMS.getStepper(200, 1);                          //second number indicates port
+Servo servo;
 
 //Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);                                      // Use I2C, ID #1000 for the IMU sensor
 
@@ -65,6 +66,7 @@ const char LEFT[] = "LEFT";
 const char STOP[] = "STOP";
 const char SLOW[] = "SLOW";
 int i = 20;
+int j = 75;
 
 /**********************************************
  * Define functions - no prototypes since the
@@ -111,10 +113,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         backward(i);
       }
       if (strcmp(RIGHT, (const char *)payload) == 0) {                           //case for if right button was pressed
-        right();
+        if (j > 82) {
+          j = 82;
+        }
+        else j = 59;
+        turn(j);
       }
       if (strcmp(LEFT, (const char *)payload) == 0) {                           //case for if left button was pressed
-        left();
+        if (j < 82) {
+          j = 82;
+        }
+        else j = 105;
+        turn(j);
       }
       if (strcmp(STOP, (const char *)payload) == 0) {                           //case for if left button was pressed
         quit();
@@ -171,13 +181,10 @@ void backward(uint8_t d) {                                                      
   digitalWrite(LED_BUILTIN, LOW);
 }
 
-void right() {
-  myMotorS->step(20, FORWARD, MICROSTEP);
+void turn(int k) {
+  servo.write(k);
 }
 
-void left() {
-  myMotorS->step(20, BACKWARD, MICROSTEP);
-}
 void quit() {
   i = 0;
   myMotor->setSpeed(0);
@@ -267,9 +274,11 @@ void setup() {
 
 
   myMotor->setSpeed(150);                 //Set the speed to start, from 0 (off) to 255 (max speed)
-  myMotorS->setSpeed(50);                 //Set servo RPM to 50
+ // myMotorS->setSpeed(10);                 //Set servo RPM to 10
   myMotor->run(FORWARD);                  //turn on motor
   myMotor->run(RELEASE);
+  servo.attach(2);
+  servo.write(82);
 
   /*
   if(!lsm.begin())
