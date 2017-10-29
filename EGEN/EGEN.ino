@@ -34,10 +34,10 @@
 /**********************************************
  * Create instances of the necessary obects
  **********************************************/
-Adafruit_MotorShield AFMS = Adafruit_MotorShield();                                 //create motor shield object with default I2C address, motor object, and 
-Adafruit_DCMotor *myMotor = AFMS.getMotor(3);                                       //stepper motor for servo. Number indicates the port
-//Adafruit_StepperMotor *myMotorS = AFMS.getStepper(200, 1);                          //second number indicates port
-Servo servo;
+Adafruit_MotorShield AFMS = Adafruit_MotorShield();                                 //create motor shield object with default I2C address and motor object 
+Adafruit_DCMotor *frontMotor = AFMS.getMotor(3);                                    //get both motors and initialize variables with them
+Adafruit_DCMotor *backMotor = AFMS.getMotor(2);                                       
+Servo servo;                                                                        //get servo
 
 //Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);                                      // Use I2C, ID #1000 for the IMU sensor
 
@@ -133,7 +133,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         int f = i - 20;
         if (f > 0) {
           i = i - 20;
-          myMotor->setSpeed(i);
+          frontMotor->setSpeed(i);
         }
       }
 
@@ -170,14 +170,18 @@ void handleLED() {                                                              
 }
 
 void forward(uint8_t d) {                                                              //function for moving car forward
-  myMotor->run(FORWARD);
-  myMotor->setSpeed(d);
+  frontMotor->run(FORWARD);
+  frontMotor->setSpeed(d);
+  backMotor->run(FORWARD);
+  backMotor->setSpeed(d);
   digitalWrite(LED_BUILTIN, HIGH);                         
 }
 
 void backward(uint8_t d) {                                                             //function for moving car backward
-  myMotor->run(BACKWARD);
-  myMotor->setSpeed(d);
+  frontMotor->run(BACKWARD);
+  frontMotor->setSpeed(d);
+  backMotor->run(BACKWARD);
+  backMotor->setSpeed(d);
   digitalWrite(LED_BUILTIN, LOW);
 }
 
@@ -187,7 +191,8 @@ void turn(int k) {
 
 void quit() {
   i = 0;
-  myMotor->setSpeed(0);
+  frontMotor->setSpeed(0);
+  backMotor->setSpeed(0);
 }
 
 /*
@@ -265,19 +270,20 @@ void displaySensorDetails(void)
  * Function to setup the program before loop
  **********************************************/
 void setup() {
-  Serial.begin(115200);                   //begin serial transmissions on 115200 baud
+  Serial.begin(115200);                      //begin serial transmissions on 115200 baud
   Serial.println("");    
-  pinMode(LED_BUILTIN, OUTPUT);           //initialize LED, set it to off
+  pinMode(LED_BUILTIN, OUTPUT);              //initialize LED, set it to off
   digitalWrite(LED_BUILTIN, HIGH); 
-  AFMS.begin();                           //create motorshield with the default frequency 1.6KHz
-  uint8_t i = 0;                          //variable to track current speed
+  AFMS.begin();                              //create motorshield with the default frequency 1.6KHz
+  
 
-
-  myMotor->setSpeed(150);                 //Set the speed to start, from 0 (off) to 255 (max speed)
- // myMotorS->setSpeed(10);                 //Set servo RPM to 10
-  myMotor->run(FORWARD);                  //turn on motor
-  myMotor->run(RELEASE);
-  servo.attach(2);
+  frontMotor->setSpeed(150);                 //Set the speed to start, from 0 (off) to 255 (max speed)
+  frontMotor->run(FORWARD);                  //turn on motor
+  frontMotor->run(RELEASE);
+  backMotor->setSpeed(150);                
+  backMotor->run(FORWARD);                  
+  backMotor->run(RELEASE);
+  servo.attach(2);                           //get servo from I/O pin 2 and initialize it's degree (82 degrees seemed to be centered)
   servo.write(82);
 
   /*
