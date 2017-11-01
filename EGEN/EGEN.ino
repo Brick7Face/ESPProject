@@ -44,10 +44,10 @@ Servo servo;                                                                    
 /**********************************************
  * Define specs for internet connection
  **********************************************/
-//static const char* ssid = "TestNet";
-//static const char* password = "password123";
-static const char ssid[] = "BillWiTheScienceFi-2G";
-static const char password[] = "genderspectrum810";
+static const char* ssid = "TestNet";
+static const char* password = "password123";
+//static const char ssid[] = "BillWiTheScienceFi-2G";
+//static const char password[] = "genderspectrum810";
 MDNSResponder mdns;
 ESP8266WiFiMulti WiFiMulti;
 
@@ -303,19 +303,19 @@ void setup() {
 
   WiFiMulti.addAP(ssid, password);
             
-  //WiFi.mode(WIFI_AP);                     //define wifi as access point
-  //WiFi.softAP(ssid, password);            //initialize web server
+  WiFi.mode(WIFI_AP);                     //define wifi as access point
+  WiFi.softAP(ssid, password);            //initialize web server
 
-  //IPAddress myIP = WiFi.softAPIP();       //get IP address
-  //Serial.print("HotSpot IP: ");           //print IP address to serial monitor
-  //Serial.println(myIP);
+  IPAddress myIP = WiFi.softAPIP();       //get IP address
+  Serial.print("HotSpot IP: ");           //print IP address to serial monitor
+  Serial.println(myIP);
 
 
   Serial.println("");
   Serial.print("Connected to ");
   Serial.println(ssid);
   Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  //Serial.println(WiFi.localIP());
 
   if (mdns.begin("espWebSock", WiFi.localIP())) {
     Serial.println("MDNS responder started");

@@ -19,11 +19,11 @@ const char MAIN_page[] PROGMEM = R"=====(
       text-align: center;
       }
       #buttons {
-      width: 35%;
+      width: 50%;
       float: left;
       }
       #data {
-      width: 64.5%;
+      width: 50%;
       }
       #content {
       margin: 0px auto;
