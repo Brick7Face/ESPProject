@@ -39,7 +39,7 @@ Adafruit_DCMotor *frontMotor = AFMS.getMotor(3);                                
 Adafruit_DCMotor *backMotor = AFMS.getMotor(2);                                       
 Servo servo;                                                                        //get servo
 
-//Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);                                      // Use I2C, ID #1000 for the IMU sensor
+Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);                                      // Use I2C, ID #1000 for the IMU sensor
 
 /**********************************************
  * Define specs for internet connection
@@ -65,11 +65,11 @@ const char RIGHT[] = "RIGHT";
 const char LEFT[] = "LEFT";
 const char STOP[] = "STOP";
 const char SLOW[] = "SLOW";
-int i = 20;
+int i = 0;
 int j = 75;
 
 /**********************************************
- * Define functions - no prototypes since the
+ * Define functions - no prototypes since they
  * are implemented here
  **********************************************/
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)                                             //handles functions for when a client triggers a web socket event
@@ -93,37 +93,42 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
       if (strcmp(FRONT, (const char *)payload) == 0) {                          //case for if forward button was pressed
         int f = i + 30;
         int g = i + 10;
-        if (f < 255) {
-          i = i + 30;
+        if (i == 0) {
+          i = 50;
+        }
+        else if (f < 255) {
+          i += 30;
         }
         else if (g < 255) {
-          i = i + 10;
+          i += 10;
         }
+        else i = 255;
         forward(i);
       }
       if (strcmp(BACK, (const char *)payload) == 0) {                           //case for if backward button was pressed
         int f = i + 20;
         int g = i + 10;
         if (f < 255) {
-           i = i + 20;
+           i += 20;
         }
         else if (g < 255) {
-          i = i + 10;
+          i += 10;
         }
+        else i = 255;
         backward(i);
       }
-      if (strcmp(RIGHT, (const char *)payload) == 0) {                           //case for if right button was pressed
-        if (j > 82) {
-          j = 82;
+      if (strcmp(RIGHT, (const char *)payload) == 0) {                          //case for if right button was pressed
+        if (j > 92) {
+          j = 92;
         }
-        else j = 59;
+        else j = 72;
         turn(j);
       }
       if (strcmp(LEFT, (const char *)payload) == 0) {                           //case for if left button was pressed
-        if (j < 82) {
-          j = 82;
+        if (j < 92) {
+          j = 92;
         }
-        else j = 105;
+        else j = 112;
         turn(j);
       }
       if (strcmp(STOP, (const char *)payload) == 0) {                           //case for if left button was pressed
@@ -133,10 +138,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         int f = i - 20;
         if (f > 0) {
           i = i - 20;
-          frontMotor->setSpeed(i);
         }
+        else i = 0;
+        backMotor->setSpeed(i);
+        frontMotor->setSpeed(i);
       }
-
 
 
       
@@ -170,18 +176,18 @@ void handleLED() {                                                              
 }
 
 void forward(uint8_t d) {                                                              //function for moving car forward
-  frontMotor->run(FORWARD);
-  frontMotor->setSpeed(d);
   backMotor->run(FORWARD);
+  frontMotor->run(FORWARD);
   backMotor->setSpeed(d);
+  frontMotor->setSpeed(d);
   digitalWrite(LED_BUILTIN, HIGH);                         
 }
 
 void backward(uint8_t d) {                                                             //function for moving car backward
-  frontMotor->run(BACKWARD);
-  frontMotor->setSpeed(d);
   backMotor->run(BACKWARD);
+  frontMotor->run(BACKWARD);
   backMotor->setSpeed(d);
+  frontMotor->setSpeed(d);
   digitalWrite(LED_BUILTIN, LOW);
 }
 
@@ -191,11 +197,11 @@ void turn(int k) {
 
 void quit() {
   i = 0;
-  frontMotor->setSpeed(0);
   backMotor->setSpeed(0);
+  frontMotor->setSpeed(0);
 }
 
-/*
+
 void configureSensor(void)                                                             //function to setup the IMU sensor
 {
   lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_2G);                          // 1.) Set the accelerometer range
@@ -275,7 +281,6 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);              //initialize LED, set it to off
   digitalWrite(LED_BUILTIN, HIGH); 
   AFMS.begin();                              //create motorshield with the default frequency 1.6KHz
-  
 
   frontMotor->setSpeed(150);                 //Set the speed to start, from 0 (off) to 255 (max speed)
   frontMotor->run(FORWARD);                  //turn on motor
@@ -284,38 +289,39 @@ void setup() {
   backMotor->run(FORWARD);                  
   backMotor->run(RELEASE);
   servo.attach(2);                           //get servo from I/O pin 2 and initialize it's degree (82 degrees seemed to be centered)
-  servo.write(82);
+  servo.write(92);
 
-  /*
+  
   if(!lsm.begin())
   {
-    /* There was a problem detecting the LSM9DS0 ... check your connections 
+    //There was a problem detecting the LSM9DS0 ... check your connections 
     Serial.print(F("Ooops, no LSM9DS0 detected ... Check your wiring or I2C ADDR!"));
     while(1);
   }
   Serial.println(F("Found LSM9DS0 9DOF"));
-  /* Display some basic information on this sensor 
+  //Display some basic information on this sensor 
   displaySensorDetails();
-  /* Setup the sensor gain and integration time 
+  //Setup the sensor gain and integration time 
   configureSensor();
   Serial.println("");
-  */
-
+  
+  WiFi.begin(ssid, password);
+  /*while(WiFi.status() != WL_CONNECTED) {
+    delay(100);
+    Serial.print(".");
+  }
+  Serial.println();*/
   WiFiMulti.addAP(ssid, password);
-            
   WiFi.mode(WIFI_AP);                     //define wifi as access point
   WiFi.softAP(ssid, password);            //initialize web server
-
   IPAddress myIP = WiFi.softAPIP();       //get IP address
   Serial.print("HotSpot IP: ");           //print IP address to serial monitor
   Serial.println(myIP);
-
-
   Serial.println("");
   Serial.print("Connected to ");
   Serial.println(ssid);
   Serial.print("IP address: ");
-  //Serial.println(WiFi.localIP());
+  Serial.println(WiFi.localIP());
 
   if (mdns.begin("espWebSock", WiFi.localIP())) {
     Serial.println("MDNS responder started");
@@ -349,32 +355,33 @@ void setup() {
 void loop() {
   webSocket.loop();
   server.handleClient();
-  
-  /* Get a new sensor event */ 
-  /*sensors_event_t accel, mag, gyro, temp;
+  WiFiClient client;
+
+
+  /*
+  /* Get a new sensor event 
+  sensors_event_t accel, mag, gyro, temp;
 
   lsm.getEvent(&accel, &mag, &gyro, &temp); 
 
   // print out accelleration data
-  Serial.print("Accel X: "); Serial.print(accel.acceleration.x); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(accel.acceleration.y);       Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(accel.acceleration.z);     Serial.println("  \tm/s^2");
+  client.print("Accel X: "); client.print(accel.acceleration.x);  client.print(" ");
+  client.print("  \tY: "); client.print(accel.acceleration.y);       client.print(" ");
+  client.print("  \tZ: "); client.print(accel.acceleration.z);     client.println("  \tm/s^2");
 
   // print out magnetometer data
-  Serial.print("Magn. X: "); Serial.print(mag.magnetic.x); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(mag.magnetic.y);       Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(mag.magnetic.z);     Serial.println("  \tgauss");
+  client.print("Magn. X: "); client.print(mag.magnetic.x); client.print(" ");
+  client.print("  \tY: "); client.print(mag.magnetic.y);       client.print(" ");
+  client.print("  \tZ: "); client.print(mag.magnetic.z);     client.println("  \tgauss");
   
   // print out gyroscopic data
-  Serial.print("Gyro  X: "); Serial.print(gyro.gyro.x); Serial.print(" ");
-  Serial.print("  \tY: "); Serial.print(gyro.gyro.y);       Serial.print(" ");
-  Serial.print("  \tZ: "); Serial.print(gyro.gyro.z);     Serial.println("  \tdps");
+  client.print("Gyro  X: "); client.print(gyro.gyro.x); client.print(" ");
+  client.print("  \tY: "); client.print(gyro.gyro.y);       client.print(" ");
+  client.print("  \tZ: "); client.print(gyro.gyro.z);     client.println("  \tdps");
 
   // print out temperature data
-  Serial.print("Temp: "); Serial.print(temp.temperature); Serial.println(" *C");
+  client.print("Temp: "); client.print(temp.temperature); client.println(" *C");
 
-  Serial.println("**********************\n");
-
-  delay(250);
+  client.println("**********************\n");
   */
 }

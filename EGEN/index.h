@@ -15,16 +15,6 @@ const char MAIN_page[] PROGMEM = R"=====(
       padding: 0px;
       width: 100%;
       }
-      #heading {
-      text-align: center;
-      }
-      #buttons {
-      width: 50%;
-      float: left;
-      }
-      #data {
-      width: 50%;
-      }
       #content {
       margin: 0px auto;
       padding: 5px;
@@ -41,11 +31,22 @@ const char MAIN_page[] PROGMEM = R"=====(
       color: #DDD;
       padding: 10px 20px;
       margin: 10px;
-      font-size: 120px;
       text-align: center;
       border-radius: 15px;
       box-shadow: -10px 20px #222;
       cursor: pointer;
+      }
+      #LED {
+      font-size: 120px;
+      }
+      #FRONT, #BACK, #RIGHT, #LEFT, #SLOW {
+      font-size: 200px;
+      height: 300px;
+      width: 300px;
+      }
+      #STOP {
+      font-size: 120px;
+      float: right;
       }
       button:hover {
       background-color: #0FF3FF;
@@ -56,6 +57,9 @@ const char MAIN_page[] PROGMEM = R"=====(
       color: #FFF;
       box-shadow: -5px 15px #555;
       transform: translateY(4px);
+      }
+      .clear {
+      clear:both;
       }
     </style>
 
@@ -68,7 +72,6 @@ const char MAIN_page[] PROGMEM = R"=====(
         websock.onerror = function(evt) { console.log(evt); };
         websock.onmessage = function(evt) {
         console.log(evt);
-        var e = document.getElementById();
         };
       }
       function ledclick() {
@@ -99,18 +102,16 @@ const char MAIN_page[] PROGMEM = R"=====(
     <div id="wrapper">
     <div id="heading">
     <button id="LED" onclick="ledclick()">LED</button>
+    <button id="STOP" onclick="stop()">STOP</button>
     </div>
+    <div class="clear"></div>
     <div id="content">
       <div id="buttons">
-        <button id="FRONT" onclick="front()" onmousedown="forwardVar = setInterval(front, 300)" onmouseup="clearInterval(forwardVar)">F</button><br>
-        <button id="LEFT" onclick="left()">L</button>
-        <button id="SLOW" onclick="slow()">SL</button>
-        <button id="RIGHT" onclick="right()">R</button><br>
-        <button id="BACK" onclick="back()" onmousedown="backwardVar = setInterval(back, 300)" onmouseup="clearInterval(backwardVar)">B</button><br><br>
-        <button id="STOP" onclick="stop()">STOP</button>
-      </div>
-      <div id="data">
-        
+        <button id="FRONT" onclick="front()" onmousedown="forwardVar = setInterval(front, 300)" onmouseup="clearInterval(forwardVar)">&#x21D1;</button><br>
+        <button id="LEFT" onclick="left()">&#x21D0;</button>
+        <button id="SLOW" onclick="slow()">&#x21B7;</button>
+        <button id="RIGHT" onclick="right()">&#x21D2;</button><br>
+        <button id="BACK" onclick="back()" onmousedown="backwardVar = setInterval(back, 300)" onmouseup="clearInterval(backwardVar)">&#x21D3;</button><br><br>
       </div>
     </div>
     </div>
