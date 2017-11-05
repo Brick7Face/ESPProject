@@ -44,7 +44,7 @@ Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);                                  
 /**********************************************
  * Define specs for internet connection
  **********************************************/
-static const char* ssid = "TestNet";
+static const char* ssid = "E_10_Vehicle";
 static const char* password = "password123";
 //static const char ssid[] = "BillWiTheScienceFi-2G";
 //static const char password[] = "genderspectrum810";
@@ -66,7 +66,7 @@ const char LEFT[] = "LEFT";
 const char STOP[] = "STOP";
 const char SLOW[] = "SLOW";
 int i = 0;
-int j = 75;
+int j = 95;
 
 /**********************************************
  * Define functions - no prototypes since they
@@ -91,57 +91,46 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         handleLED();
       }
       if (strcmp(FRONT, (const char *)payload) == 0) {                          //case for if forward button was pressed
-        int f = i + 30;
-        int g = i + 10;
-        if (i == 0) {
-          i = 50;
+        if (i >= -40 && i < 40) {
+          i = 40;
         }
-        else if (f < 255) {
-          i += 30;
-        }
-        else if (g < 255) {
-          i += 10;
+        int f = i + 20;
+        if (f < 255) {
+          i += 20;
         }
         else i = 255;
-        forward(i);
+        motion(i);
       }
       if (strcmp(BACK, (const char *)payload) == 0) {                           //case for if backward button was pressed
-        int f = i + 20;
-        int g = i + 10;
-        if (f < 255) {
-           i += 20;
+        if (i <= 40 && i > -40) {
+          i = -40;
         }
-        else if (g < 255) {
-          i += 10;
+        else if (i <= 40 && i > 0) {
+          i = 0;
         }
-        else i = 255;
-        backward(i);
+        int f = i - 20;
+        if (f > -255) {
+          i -= 20;
+        }
+        else i = -255;
+        motion(i);
       }
       if (strcmp(RIGHT, (const char *)payload) == 0) {                          //case for if right button was pressed
-        if (j > 92) {
-          j = 92;
+        if (j > 95) {
+          j = 95;
         }
-        else j = 72;
+        else j = 70;
         turn(j);
       }
       if (strcmp(LEFT, (const char *)payload) == 0) {                           //case for if left button was pressed
-        if (j < 92) {
-          j = 92;
+        if (j < 95) {
+          j = 95;
         }
-        else j = 112;
+        else j = 120;
         turn(j);
       }
       if (strcmp(STOP, (const char *)payload) == 0) {                           //case for if left button was pressed
         quit();
-      }
-      if (strcmp(SLOW, (const char *)payload) == 0) {                           //case for if left button was pressed
-        int f = i - 20;
-        if (f > 0) {
-          i = i - 20;
-        }
-        else i = 0;
-        backMotor->setSpeed(i);
-        frontMotor->setSpeed(i);
       }
 
 
@@ -175,20 +164,18 @@ void handleLED() {                                                              
   digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));                                 //sets the state of the LED to the inverse of what it currently was)
 }
 
-void forward(uint8_t d) {                                                              //function for moving car forward
-  backMotor->run(FORWARD);
-  frontMotor->run(FORWARD);
-  backMotor->setSpeed(d);
-  frontMotor->setSpeed(d);
-  digitalWrite(LED_BUILTIN, HIGH);                         
-}
 
-void backward(uint8_t d) {                                                             //function for moving car backward
-  backMotor->run(BACKWARD);
-  frontMotor->run(BACKWARD);
-  backMotor->setSpeed(d);
-  frontMotor->setSpeed(d);
-  digitalWrite(LED_BUILTIN, LOW);
+void motion(int d) {
+  if (d > -10) {
+    backMotor->run(FORWARD);
+    frontMotor->run(FORWARD);
+  }
+  else if (d < 10) {
+    backMotor->run(BACKWARD);
+    frontMotor->run(BACKWARD);
+  }
+  backMotor->setSpeed(abs(d));
+  frontMotor->setSpeed(abs(d));
 }
 
 void turn(int k) {
@@ -289,7 +276,7 @@ void setup() {
   backMotor->run(FORWARD);                  
   backMotor->run(RELEASE);
   servo.attach(2);                           //get servo from I/O pin 2 and initialize it's degree (82 degrees seemed to be centered)
-  servo.write(92);
+  servo.write(95);
 
   
   if(!lsm.begin())

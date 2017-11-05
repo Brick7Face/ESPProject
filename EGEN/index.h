@@ -29,7 +29,7 @@ const char MAIN_page[] PROGMEM = R"=====(
       background-color: #22B6FF;
       border: none;
       color: #DDD;
-      padding: 10px 20px;
+      padding: 20px;
       margin: 10px;
       text-align: center;
       border-radius: 15px;
@@ -39,14 +39,10 @@ const char MAIN_page[] PROGMEM = R"=====(
       #LED {
       font-size: 120px;
       }
-      #FRONT, #BACK, #RIGHT, #LEFT, #SLOW {
+      #FRONT, #BACK, #RIGHT, #LEFT, #STOP {
       font-size: 200px;
       height: 300px;
       width: 300px;
-      }
-      #STOP {
-      font-size: 120px;
-      float: right;
       }
       button:hover {
       background-color: #0FF3FF;
@@ -92,9 +88,6 @@ const char MAIN_page[] PROGMEM = R"=====(
       function stop() {
         websock.send("STOP");
       }
-      function slow() {
-        websock.send("SLOW");
-      }
     </script>
   </head>
 
@@ -102,14 +95,13 @@ const char MAIN_page[] PROGMEM = R"=====(
     <div id="wrapper">
     <div id="heading">
     <button id="LED" onclick="ledclick()">LED</button>
-    <button id="STOP" onclick="stop()">STOP</button>
     </div>
     <div class="clear"></div>
     <div id="content">
       <div id="buttons">
         <button id="FRONT" onclick="front()" onmousedown="forwardVar = setInterval(front, 300)" onmouseup="clearInterval(forwardVar)">&#x21D1;</button><br>
         <button id="LEFT" onclick="left()">&#x21D0;</button>
-        <button id="SLOW" onclick="slow()">&#x21B7;</button>
+        <button id="STOP" onclick="stop()">&#x25FB;</button>
         <button id="RIGHT" onclick="right()">&#x21D2;</button><br>
         <button id="BACK" onclick="back()" onmousedown="backwardVar = setInterval(back, 300)" onmouseup="clearInterval(backwardVar)">&#x21D3;</button><br><br>
       </div>
