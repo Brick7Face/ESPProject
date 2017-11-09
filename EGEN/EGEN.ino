@@ -17,7 +17,6 @@
  * Include the necessary libraries
  *************************************/
 #include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>
 #include <WebSocketsServer.h>
 #include <Hash.h>
 #include <ESP8266WebServer.h>
@@ -49,7 +48,6 @@ static const char* password = "password123";
 //static const char ssid[] = "BillWiTheScienceFi-2G";
 //static const char password[] = "genderspectrum810";
 MDNSResponder mdns;
-ESP8266WiFiMulti WiFiMulti;
 
 //host web server on port 80 (standard), web socket on port 81
 ESP8266WebServer server(80);
@@ -298,17 +296,18 @@ void setup() {
     Serial.print(".");
   }
   Serial.println();*/
-  WiFiMulti.addAP(ssid, password);
   WiFi.mode(WIFI_AP);                     //define wifi as access point
   WiFi.softAP(ssid, password);            //initialize web server
   IPAddress myIP = WiFi.softAPIP();       //get IP address
   Serial.print("HotSpot IP: ");           //print IP address to serial monitor
   Serial.println(myIP);
   Serial.println("");
+  /*
   Serial.print("Connected to ");
   Serial.println(ssid);
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
+  */
 
   if (mdns.begin("espWebSock", WiFi.localIP())) {
     Serial.println("MDNS responder started");
@@ -342,7 +341,6 @@ void setup() {
 void loop() {
   webSocket.loop();
   server.handleClient();
-  WiFiClient client;
 
 
   /*
