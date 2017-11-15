@@ -44,8 +44,8 @@ Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);                                  
 /**********************************************
  * Define specs for internet connection
  **********************************************/
-static const char* ssid = "TestNet";
-static const char* password = "password123";
+static const char* ssid = "Droopy Rhino";
+static const char* password = "passwordE10";
 //static const char ssid[] = "BillWiTheScienceFi-2G";
 //static const char password[] = "genderspectrum810";
 MDNSResponder mdns;
@@ -65,6 +65,7 @@ const char RIGHT[] = "RIGHT";
 const char LEFT[] = "LEFT";
 const char STOP[] = "STOP";
 const char SLOW[] = "SLOW";
+const char IMU[] = "IMU";
 int i = 0;
 int j = 75;
 
@@ -143,7 +144,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         backMotor->setSpeed(i);
         frontMotor->setSpeed(i);
       }
-
+      if (strcmp(IMU, (const char *)payload) == 0) {                           //case for if left button was pressed
+        handleIMU();
+      }
 
       
       // send data to all connected clients
@@ -169,6 +172,17 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
 
 void handleRoot() {                                                                    //function for handling startup: root for root directory of website
   server.send(200, "text/html", MAIN_page);                                            //upon startup, load HTML page to server
+}
+
+void handleIMU() {
+  //Get a new sensor event 
+  sensors_event_t accel, mag, gyro, temp;
+
+  lsm.getEvent(&accel, &mag, &gyro, &temp); 
+
+  // print out accelleration data
+  String accX = ("Accel X: %s\n\tY: %s\n\tZ: %s\tm/s^2", String(accel.acceleration.x), String(accel.acceleration.y), String(accel.acceleration.z));
+  server.send(200, "text/plain", accX);
 }
 
 void handleLED() {                                                                     //function to turn LED on and off
@@ -338,6 +352,7 @@ void setup() {
   
 
   server.on("/", handleRoot);                //define server startup behavior
+  server.on("/IMU", handleIMU);
   server.begin();                            //start server
   Serial.println("HTTP server started.");
   
@@ -358,19 +373,17 @@ void loop() {
   WiFiClient client;
 
 
-  
+  /*
   //Get a new sensor event 
   sensors_event_t accel, mag, gyro, temp;
 
   lsm.getEvent(&accel, &mag, &gyro, &temp); 
 
+  
   // print out accelleration data
-  //client.print("Accel X: "); client.print(accel.acceleration.x);  client.print(" ");
-  String accX = "Accel X: ";
-  strcat(accX, accel.acceleration.x);
+  String accX = ("Accel X: %s\n\tY: %s\n\tZ: %s\tm/s^2", String(accel.acceleration.x), String(accel.acceleration.y), String(accel.acceleration.z));
   server.send(200, "text/plain", accX);
-  /*client.print("  \tY: "); client.print(accel.acceleration.y);       client.print(" ");
-  client.print("  \tZ: "); client.print(accel.acceleration.z);     client.println("  \tm/s^2");
+  /*
 
   // print out magnetometer data
   client.print("Magn. X: "); client.print(mag.magnetic.x); client.print(" ");
