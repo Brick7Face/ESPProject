@@ -4,7 +4,7 @@
  *  in HTML5 and CSS3 using a web socket. This enables data to
  *  flow both directions. The microcontroller hosts the website
  *  and a client can connect and send data to the microcontroller.
- *  The microcontroller send data as well, such as the IMU
+ *  The microcontroller sends data as well, such as the IMU
  *  information, allowing the client to access onboard statistics.
  *  
  *  Author: Nate Tranel
@@ -31,6 +31,8 @@
 #include <Adafruit_LSM9DS0.h>
 #include "index.h"
 
+
+
 /**********************************************
  * Create instances of the necessary obects
  **********************************************/
@@ -40,6 +42,8 @@ Adafruit_DCMotor *backMotor = AFMS.getMotor(2);
 Servo servo;                                                                        //get servo
 
 Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);                                      // Use I2C, ID #1000 for the IMU sensor
+
+
 
 /**********************************************
  * Define specs for internet connection
@@ -54,6 +58,8 @@ ESP8266WiFiMulti WiFiMulti;
 //host web server on port 80 (standard), web socket on port 81
 ESP8266WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
+
+
 
 /**********************************************
  * Define constants to be used
@@ -73,6 +79,68 @@ int j = 75;
  * Define functions - no prototypes since they
  * are implemented here
  **********************************************/
+void configureSensor(void)                                                             //function to setup the IMU sensor
+{
+  // 1.) Set the accelerometer range
+  lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_16G);
+  
+  // 2.) Set the magnetometer sensitivity
+  lsm.setupMag(lsm.LSM9DS0_MAGGAIN_12GAUSS);
+
+  // 3.) Setup the gyroscope
+  lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_2000DPS);
+}
+
+
+//display details about the sensor to serial (only for if wired)
+void displaySensorDetails(void)
+{
+  sensor_t accel, mag, gyro, temp;
+  lsm.getSensor(&accel, &mag, &gyro, &temp);
+  Serial.println(F("------------------------------------"));
+  Serial.print  (F("Sensor:       ")); Serial.println(accel.name);
+  Serial.print  (F("Driver Ver:   ")); Serial.println(accel.version);
+  Serial.print  (F("Unique ID:    ")); Serial.println(accel.sensor_id);
+  Serial.print  (F("Max Value:    ")); Serial.print(accel.max_value); Serial.println(F(" m/s^2"));
+  Serial.print  (F("Min Value:    ")); Serial.print(accel.min_value); Serial.println(F(" m/s^2"));
+  Serial.print  (F("Resolution:   ")); Serial.print(accel.resolution); Serial.println(F(" m/s^2"));  
+  Serial.println(F("------------------------------------"));
+  Serial.println(F(""));
+
+  Serial.println(F("------------------------------------"));
+  Serial.print  (F("Sensor:       ")); Serial.println(mag.name);
+  Serial.print  (F("Driver Ver:   ")); Serial.println(mag.version);
+  Serial.print  (F("Unique ID:    ")); Serial.println(mag.sensor_id);
+  Serial.print  (F("Max Value:    ")); Serial.print(mag.max_value); Serial.println(F(" uT"));
+  Serial.print  (F("Min Value:    ")); Serial.print(mag.min_value); Serial.println(F(" uT"));
+  Serial.print  (F("Resolution:   ")); Serial.print(mag.resolution); Serial.println(F(" uT"));  
+  Serial.println(F("------------------------------------"));
+  Serial.println(F(""));
+
+  Serial.println(F("------------------------------------"));
+  Serial.print  (F("Sensor:       ")); Serial.println(gyro.name);
+  Serial.print  (F("Driver Ver:   ")); Serial.println(gyro.version);
+  Serial.print  (F("Unique ID:    ")); Serial.println(gyro.sensor_id);
+  Serial.print  (F("Max Value:    ")); Serial.print(gyro.max_value); Serial.println(F(" rad/s"));
+  Serial.print  (F("Min Value:    ")); Serial.print(gyro.min_value); Serial.println(F(" rad/s"));
+  Serial.print  (F("Resolution:   ")); Serial.print(gyro.resolution); Serial.println(F(" rad/s"));  
+  Serial.println(F("------------------------------------"));
+  Serial.println(F(""));
+
+  Serial.println(F("------------------------------------"));
+  Serial.print  (F("Sensor:       ")); Serial.println(temp.name);
+  Serial.print  (F("Driver Ver:   ")); Serial.println(temp.version);
+  Serial.print  (F("Unique ID:    ")); Serial.println(temp.sensor_id);
+  Serial.print  (F("Max Value:    ")); Serial.print(temp.max_value); Serial.println(F(" C"));
+  Serial.print  (F("Min Value:    ")); Serial.print(temp.min_value); Serial.println(F(" C"));
+  Serial.print  (F("Resolution:   ")); Serial.print(temp.resolution); Serial.println(F(" C"));  
+  Serial.println(F("------------------------------------"));
+  Serial.println(F(""));
+  
+  delay(500);
+}
+
+
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length)                                             //handles functions for when a client triggers a web socket event
 {
   Serial.printf("webSocketEvent(%d, %d, ...)\r\n", num, type);
@@ -132,10 +200,10 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         else j = 112;
         turn(j);
       }
-      if (strcmp(STOP, (const char *)payload) == 0) {                           //case for if left button was pressed
+      if (strcmp(STOP, (const char *)payload) == 0) {                           //case for if stop button was pressed
         quit();
       }
-      if (strcmp(SLOW, (const char *)payload) == 0) {                           //case for if left button was pressed
+      if (strcmp(SLOW, (const char *)payload) == 0) {                           //case for if slow button was pressed
         int f = i - 20;
         if (f > 0) {
           i = i - 20;
@@ -144,7 +212,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         backMotor->setSpeed(i);
         frontMotor->setSpeed(i);
       }
-      if (strcmp(IMU, (const char *)payload) == 0) {                           //case for if left button was pressed
+      if (strcmp(IMU, (const char *)payload) == 0) {                           //case for if IMU page button was pressed
         handleIMU();
       }
 
@@ -174,14 +242,16 @@ void handleRoot() {                                                             
   server.send(200, "text/html", MAIN_page);                                            //upon startup, load HTML page to server
 }
 
-void handleIMU() {
+void handleIMU() {                                                                     //prints IMU data to page
   //Get a new sensor event 
   sensors_event_t accel, mag, gyro, temp;
-
   lsm.getEvent(&accel, &mag, &gyro, &temp); 
 
   // print out accelleration data
-  String accX = ("Accel X: %s\n\tY: %s\n\tZ: %s\tm/s^2", String(accel.acceleration.x), String(accel.acceleration.y), String(accel.acceleration.z));
+  float x = accel.acceleration.x;
+  float y = accel.acceleration.y;
+  float acc = sqrt(sq(x) + sq(y)) - 1.8;
+  String accX = "Acceleration: " + String(acc) + " m/s^2" + "\nTemp: " + String(temp.temperature) + " *C";    //not right value?
   server.send(200, "text/plain", accX);
 }
 
@@ -205,85 +275,16 @@ void backward(uint8_t d) {                                                      
   digitalWrite(LED_BUILTIN, LOW);
 }
 
-void turn(int k) {
+void turn(int k) {                                                                     //function for turning the car
   servo.write(k);
 }
 
-void quit() {
+void quit() {                                                                          //function to stop the car's motion
   i = 0;
   backMotor->setSpeed(0);
   frontMotor->setSpeed(0);
 }
 
-
-void configureSensor(void)                                                             //function to setup the IMU sensor
-{
-  lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_2G);                          // 1.) Set the accelerometer range
-  //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_4G);
-  //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_6G);
-  //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_8G);
-  //lsm.setupAccel(lsm.LSM9DS0_ACCELRANGE_16G);
-  
-  lsm.setupMag(lsm.LSM9DS0_MAGGAIN_2GAUSS);                           // 2.) Set the magnetometer sensitivity
-  //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_4GAUSS);
-  //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_8GAUSS);
-  //lsm.setupMag(lsm.LSM9DS0_MAGGAIN_12GAUSS);
-
-  lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);                        // 3.) Setup the gyroscope
-  //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_500DPS);
-  //lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_2000DPS);
-}
-
-
-
-void displaySensorDetails(void)
-{
-  sensor_t accel, mag, gyro, temp;
-  
-  lsm.getSensor(&accel, &mag, &gyro, &temp);
-  
-  Serial.println(F("------------------------------------"));
-  Serial.print  (F("Sensor:       ")); Serial.println(accel.name);
-  Serial.print  (F("Driver Ver:   ")); Serial.println(accel.version);
-  Serial.print  (F("Unique ID:    ")); Serial.println(accel.sensor_id);
-  Serial.print  (F("Max Value:    ")); Serial.print(accel.max_value); Serial.println(F(" m/s^2"));
-  Serial.print  (F("Min Value:    ")); Serial.print(accel.min_value); Serial.println(F(" m/s^2"));
-  Serial.print  (F("Resolution:   ")); Serial.print(accel.resolution); Serial.println(F(" m/s^2"));  
-  Serial.println(F("------------------------------------"));
-  Serial.println(F(""));
-
-  Serial.println(F("------------------------------------"));
-  Serial.print  (F("Sensor:       ")); Serial.println(mag.name);
-  Serial.print  (F("Driver Ver:   ")); Serial.println(mag.version);
-  Serial.print  (F("Unique ID:    ")); Serial.println(mag.sensor_id);
-  Serial.print  (F("Max Value:    ")); Serial.print(mag.max_value); Serial.println(F(" uT"));
-  Serial.print  (F("Min Value:    ")); Serial.print(mag.min_value); Serial.println(F(" uT"));
-  Serial.print  (F("Resolution:   ")); Serial.print(mag.resolution); Serial.println(F(" uT"));  
-  Serial.println(F("------------------------------------"));
-  Serial.println(F(""));
-
-  Serial.println(F("------------------------------------"));
-  Serial.print  (F("Sensor:       ")); Serial.println(gyro.name);
-  Serial.print  (F("Driver Ver:   ")); Serial.println(gyro.version);
-  Serial.print  (F("Unique ID:    ")); Serial.println(gyro.sensor_id);
-  Serial.print  (F("Max Value:    ")); Serial.print(gyro.max_value); Serial.println(F(" rad/s"));
-  Serial.print  (F("Min Value:    ")); Serial.print(gyro.min_value); Serial.println(F(" rad/s"));
-  Serial.print  (F("Resolution:   ")); Serial.print(gyro.resolution); Serial.println(F(" rad/s"));  
-  Serial.println(F("------------------------------------"));
-  Serial.println(F(""));
-
-  Serial.println(F("------------------------------------"));
-  Serial.print  (F("Sensor:       ")); Serial.println(temp.name);
-  Serial.print  (F("Driver Ver:   ")); Serial.println(temp.version);
-  Serial.print  (F("Unique ID:    ")); Serial.println(temp.sensor_id);
-  Serial.print  (F("Max Value:    ")); Serial.print(temp.max_value); Serial.println(F(" C"));
-  Serial.print  (F("Min Value:    ")); Serial.print(temp.min_value); Serial.println(F(" C"));
-  Serial.print  (F("Resolution:   ")); Serial.print(temp.resolution); Serial.println(F(" C"));  
-  Serial.println(F("------------------------------------"));
-  Serial.println(F(""));
-  
-  delay(500);
-}
 
 
 /**********************************************
@@ -291,6 +292,7 @@ void displaySensorDetails(void)
  **********************************************/
 void setup() {
   Serial.begin(115200);                      //begin serial transmissions on 115200 baud
+  delay(100);
   Serial.println("");    
   pinMode(LED_BUILTIN, OUTPUT);              //initialize LED, set it to off
   digitalWrite(LED_BUILTIN, HIGH); 
@@ -308,23 +310,20 @@ void setup() {
   
   if(!lsm.begin())
   {
-    //There was a problem detecting the LSM9DS0 ... check your connections 
-    Serial.print(F("Ooops, no LSM9DS0 detected ... Check your wiring or I2C ADDR!"));
+    //There was a problem detecting the LSM9DS0
+    Serial.print(F("No LSM9DS0 detected."));
     while(1);
   }
   Serial.println(F("Found LSM9DS0 9DOF"));
   //Display some basic information on this sensor 
   displaySensorDetails();
+  
   //Setup the sensor gain and integration time 
   configureSensor();
   Serial.println("");
   
   WiFi.begin(ssid, password);
-  /*while(WiFi.status() != WL_CONNECTED) {
-    delay(100);
-    Serial.print(".");
-  }
-  Serial.println();*/
+  
   WiFiMulti.addAP(ssid, password);
   WiFi.mode(WIFI_AP);                     //define wifi as access point
   WiFi.softAP(ssid, password);            //initialize web server
@@ -332,10 +331,6 @@ void setup() {
   Serial.print("HotSpot IP: ");           //print IP address to serial monitor
   Serial.println(myIP);
   Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
 
   if (mdns.begin("espWebSock", WiFi.localIP())) {
     Serial.println("MDNS responder started");
@@ -345,19 +340,15 @@ void setup() {
   else {
     Serial.println("MDNS.begin failed");
   }
-  Serial.print("Connect to http://espWebSock.local or http://");
-  Serial.println(WiFi.localIP());
-
-
   
 
-  server.on("/", handleRoot);                //define server startup behavior
-  server.on("/IMU", handleIMU);
-  server.begin();                            //start server
+  server.on("/", HTTP_GET, handleRoot);                //define server startup behavior
+  server.on("/IMU", HTTP_POST, handleIMU);             //define behavior on the /IMU page
+  server.begin();                                      //start server
   Serial.println("HTTP server started.");
   
 
-  webSocket.begin();                         //start web socket
+  webSocket.begin();                                   //start web socket
   webSocket.onEvent(webSocketEvent);
 
 }
@@ -372,17 +363,6 @@ void loop() {
   server.handleClient();
   WiFiClient client;
 
-
-  /*
-  //Get a new sensor event 
-  sensors_event_t accel, mag, gyro, temp;
-
-  lsm.getEvent(&accel, &mag, &gyro, &temp); 
-
-  
-  // print out accelleration data
-  String accX = ("Accel X: %s\n\tY: %s\n\tZ: %s\tm/s^2", String(accel.acceleration.x), String(accel.acceleration.y), String(accel.acceleration.z));
-  server.send(200, "text/plain", accX);
   /*
 
   // print out magnetometer data

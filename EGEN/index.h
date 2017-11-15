@@ -92,6 +92,8 @@ const char MAIN_page[] PROGMEM = R"=====(
       }
       function imu() {
         websock.send("IMU");
+        window.location = 'http://192.168.4.1/IMU';
+        location.reload(true);
       }
     </script>
   </head>
@@ -100,7 +102,7 @@ const char MAIN_page[] PROGMEM = R"=====(
     <div id="wrapper">
     <div id="heading">
     <button id="LED" onclick="ledclick()">LED</button>
-    <button id="IMU" onclick="imu()">IMU</button>
+    <button id="IMU" onclick="imuVar = setInterval(imu, 200)">IMU</button>
     </div>
     <div class="clear"></div>
     <div id="content">
