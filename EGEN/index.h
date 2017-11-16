@@ -1,4 +1,6 @@
 const char MAIN_page[] PROGMEM = R"=====(
+
+
 <!doctype html>
 <html>
   <head>
@@ -99,8 +101,9 @@ const char MAIN_page[] PROGMEM = R"=====(
   <body onload="javascript:start();">
     <div id="wrapper">
     <div id="heading">
+  <form id="IMUform" action="/IMU" method="POST"></form>
     <button id="LED" onclick="ledclick()">LED</button>
-    <button id="IMU" onclick="imu()"><form action="/IMU" method="POST">IMU</form></button>
+  <button id="IMU" form="IMUform" onclick="imu()">IMU</button>
     </div>
     <div class="clear"></div>
     <div id="content">

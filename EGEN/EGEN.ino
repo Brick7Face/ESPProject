@@ -50,8 +50,6 @@ Adafruit_LSM9DS0 lsm = Adafruit_LSM9DS0(1000);                                  
  **********************************************/
 static const char* ssid = "Droopy Rhino";
 static const char* password = "passwordE10";
-//static const char ssid[] = "BillWiTheScienceFi-2G";
-//static const char password[] = "genderspectrum810";
 MDNSResponder mdns;
 
 //host web server on port 80 (standard), web socket on port 81
@@ -71,6 +69,14 @@ const char STOP[] = "STOP";
 const char IMU[] = "IMU";
 int i = 0;
 int j = 75;
+float lowAcc = 500;
+float highAcc = 0;
+float lowMag = 500;
+float highMag = -500;
+float lowGyro = 500;
+float highGyro = -500;
+float lowTemp = 100;
+float highTemp = 0;
 
 /**********************************************
  * Define functions - no prototypes since they
@@ -233,14 +239,44 @@ void handleIMU() {                                                              
   sensors_event_t accel, mag, gyro, temp;
   lsm.getEvent(&accel, &mag, &gyro, &temp); 
 
-  String html = "<!doctype html><html><head><META HTTP-EQUIV=\"refresh\" CONTENT=\"1\"><title>IMU Data</title><style>p{font-size:24;}</style></head>";
+  //send the IMU data to GUI
+  String html = "<!doctype html><html><head><META HTTP-EQUIV=\"refresh\" CONTENT=\"1\"><title>IMU Data</title><style>body{background-color:#333;}h2{font-size:40px;color:white;}h3{font-size:36px;color:white;}p{font-size:32px;color:white;}</style></head><body>";
   // print out IMU data
-  String inf1 = "<p>Acceleration: <br>X: " + String(accel.acceleration.x) + "<br>Y: " + String(accel.acceleration.y) + "<br>Z: " + String(accel.acceleration.z) + " m/s^2<br><br>";
-  String inf2 = "Magnetometer: <br>X: " + String(mag.magnetic.x) + "<br>Y: " + String(mag.magnetic.y) + "<br>Z: " + String(mag.magnetic.z) + " gauss<br><br>";
-  String inf3 = "Gyroscope: <br>X: " + String(gyro.gyro.x) + "<br>Y: " + String(gyro.gyro.y) + "<br>Z: " + String(gyro.gyro.z) + " dps<br><br>";;
-  String inf4 = "Temperature: " + String(temp.temperature) + " *C<br><p>";
-  String htmlEnd = "</html>";
-  String info = inf1 + inf2 + inf3 + inf4;
+  float acc = sqrt(sq(accel.acceleration.x) + sq(accel.acceleration.y) + sq(accel.acceleration.z)) - 9;
+  float magno = sqrt(sq(mag.magnetic.x) + sq(mag.magnetic.y) + sq(mag.magnetic.z));
+  float gy = sqrt(sq(gyro.gyro.x) + sq(gyro.gyro.y) + sq(gyro.gyro.z)) - 5;
+  float temper = temp.temperature;
+  if (acc < lowAcc) {
+    lowAcc = acc;
+  }
+  if (acc > highAcc) {                                                                //these all initialize the variables to keep track of extreme values
+    highAcc = acc;
+  }
+  if (magno < lowMag) {
+    lowMag = magno;
+  }
+  if (magno > highMag) {
+    highMag = magno;
+  }
+  if (gy < lowGyro) {
+    lowGyro = gy;
+  }
+  if (gy > highGyro) {
+    highGyro = gy;
+  }
+  if (temper < lowTemp) {
+    lowTemp = temper;
+  }
+  if (temper > highTemp) {
+    highTemp = temper;
+  }
+  String inf1 = "<h2>Current Readings:</h2><p>Acceleration: " + String(acc) + " m/s^2<br>";
+  String inf2 = "Magnetometer: " + String(magno) + " rad/s<br>";
+  String inf3 = "Gyroscope: " + String(gy) + " dps<br>";
+  String inf4 = "Temperature: " + String(temper) + " *C<br><br><br></p><h3>Extremes:</h3><p>Acceleration:<br>";
+  String maxMin = "Max: " + String(highAcc) + "<br><br>Min: " + String(lowAcc)+ "<br>Magnetometer:<br>Max: " + String(highMag) + "<br><br>Min: " + String(lowMag) + "<br>Gryoscope:<br>Max: " + String(highGyro) + "<br><br>Min: " + String(lowGyro) + "<br>Temperature:<br>Max: " + String(highTemp) + "<br>Min: " + String(lowTemp);
+  String htmlEnd = "</p></body></html>";
+  String info = html + inf1 + inf2 + inf3 + inf4 + maxMin + htmlEnd;
   server.send(200, "text/html", info);  
 }
 
@@ -248,7 +284,7 @@ void handleLED() {                                                              
   digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));                                 //sets the state of the LED to the inverse of what it currently was)
 }
 
-void motion(int d) {
+void motion(int d) {                                                                   //function for moving the car
   if (d > -10) {
     backMotor->run(FORWARD);
     frontMotor->run(FORWARD);
@@ -298,22 +334,23 @@ void setup() {
   {
     //There was a problem detecting the LSM9DS0
     Serial.print(F("No LSM9DS0 detected."));
-    while(1);
   }
-  Serial.println(F("Found LSM9DS0 9DOF"));
-  //Display some basic information on this sensor 
-  displaySensorDetails();
-  
-  //Setup the sensor gain and integration time 
-  configureSensor();
-  Serial.println("");
+  else {
+    Serial.println(F("Found LSM9DS0 9DOF"));
+    //Display some basic information on this sensor 
+    displaySensorDetails();
+      
+    //Setup the sensor gain and integration time 
+    configureSensor();
+    Serial.println("");
+  }
   
   WiFi.begin(ssid, password);
   
   WiFi.mode(WIFI_AP);                     //define wifi as access point
   WiFi.softAP(ssid, password);            //initialize web server
   IPAddress myIP = WiFi.softAPIP();       //get IP address
-  Serial.print("HotSpot IP: ");           //print IP address to serial monitor
+  Serial.print("\nHotSpot IP: ");         //print IP address to serial monitor
   Serial.println(myIP);
   Serial.println("");
 
@@ -328,7 +365,7 @@ void setup() {
   
 
   server.on("/", handleRoot);                //define server startup behavior
-  server.on("/IMU", handleIMU);             //define behavior on the /IMU page
+  server.on("/IMU", handleIMU);              //define behavior on the /IMU page
   server.begin();                                      //start server
   Serial.println("HTTP server started.");
   
