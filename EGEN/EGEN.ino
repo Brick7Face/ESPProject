@@ -233,12 +233,15 @@ void handleIMU() {                                                              
   sensors_event_t accel, mag, gyro, temp;
   lsm.getEvent(&accel, &mag, &gyro, &temp); 
 
-  // print out accelleration data
-  float x = accel.acceleration.x;
-  float y = accel.acceleration.y;
-  float acc = sqrt(sq(x) + sq(y)) - 1.8;
-  String accX = "Acceleration: " + String(acc) + " m/s^2" + "\nTemp: " + String(temp.temperature) + " *C";    //not right value?
-  server.send(200, "text/plain", accX);
+  String html = "<!doctype html><html><head><META HTTP-EQUIV=\"refresh\" CONTENT=\"1\"><title>IMU Data</title><style>p{font-size:24;}</style></head>";
+  // print out IMU data
+  String inf1 = "<p>Acceleration: <br>X: " + String(accel.acceleration.x) + "<br>Y: " + String(accel.acceleration.y) + "<br>Z: " + String(accel.acceleration.z) + " m/s^2<br><br>";
+  String inf2 = "Magnetometer: <br>X: " + String(mag.magnetic.x) + "<br>Y: " + String(mag.magnetic.y) + "<br>Z: " + String(mag.magnetic.z) + " gauss<br><br>";
+  String inf3 = "Gyroscope: <br>X: " + String(gyro.gyro.x) + "<br>Y: " + String(gyro.gyro.y) + "<br>Z: " + String(gyro.gyro.z) + " dps<br><br>";;
+  String inf4 = "Temperature: " + String(temp.temperature) + " *C<br><p>";
+  String htmlEnd = "</html>";
+  String info = inf1 + inf2 + inf3 + inf4;
+  server.send(200, "text/html", info);  
 }
 
 void handleLED() {                                                                     //function to turn LED on and off
@@ -307,7 +310,6 @@ void setup() {
   
   WiFi.begin(ssid, password);
   
-  WiFiMulti.addAP(ssid, password);
   WiFi.mode(WIFI_AP);                     //define wifi as access point
   WiFi.softAP(ssid, password);            //initialize web server
   IPAddress myIP = WiFi.softAPIP();       //get IP address
@@ -325,8 +327,8 @@ void setup() {
   }
   
 
-  server.on("/", HTTP_GET, handleRoot);                //define server startup behavior
-  server.on("/IMU", HTTP_POST, handleIMU);             //define behavior on the /IMU page
+  server.on("/", handleRoot);                //define server startup behavior
+  server.on("/IMU", handleIMU);             //define behavior on the /IMU page
   server.begin();                                      //start server
   Serial.println("HTTP server started.");
   
@@ -345,21 +347,5 @@ void loop() {
   webSocket.loop();
   server.handleClient();
   WiFiClient client;
-
-  /*
-
-  // print out magnetometer data
-  client.print("Magn. X: "); client.print(mag.magnetic.x); client.print(" ");
-  client.print("  \tY: "); client.print(mag.magnetic.y);       client.print(" ");
-  client.print("  \tZ: "); client.print(mag.magnetic.z);     client.println("  \tgauss");
-  
-  // print out gyroscopic data
-  client.print("Gyro  X: "); client.print(gyro.gyro.x); client.print(" ");
-  client.print("  \tY: "); client.print(gyro.gyro.y);       client.print(" ");
-  client.print("  \tZ: "); client.print(gyro.gyro.z);     client.println("  \tdps");
-
-  // print out temperature data
-  client.print("Temp: "); client.print(temp.temperature); client.println(" *C");
-
-  client.println("**********************\n");*/
+  handleIMU();
 }
