@@ -53,12 +53,10 @@ static const char* password = "passwordE10";
 //static const char ssid[] = "BillWiTheScienceFi-2G";
 //static const char password[] = "genderspectrum810";
 MDNSResponder mdns;
-ESP8266WiFiMulti WiFiMulti;
 
 //host web server on port 80 (standard), web socket on port 81
 ESP8266WebServer server(80);
 WebSocketsServer webSocket = WebSocketsServer(81);
-
 
 
 /**********************************************
@@ -70,7 +68,6 @@ const char BACK[] = "BACK";
 const char RIGHT[] = "RIGHT";
 const char LEFT[] = "LEFT";
 const char STOP[] = "STOP";
-const char SLOW[] = "SLOW";
 const char IMU[] = "IMU";
 int i = 0;
 int j = 75;
@@ -160,57 +157,46 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t length
         handleLED();
       }
       if (strcmp(FRONT, (const char *)payload) == 0) {                          //case for if forward button was pressed
-        int f = i + 30;
-        int g = i + 10;
-        if (i == 0) {
-          i = 50;
+        if (i >= -40 && i < 40) {
+          i = 40;
         }
-        else if (f < 255) {
-          i += 30;
-        }
-        else if (g < 255) {
-          i += 10;
+        int f = i + 20;
+        if (f < 255) {
+          i += 20;
         }
         else i = 255;
-        forward(i);
+        motion(i);
       }
       if (strcmp(BACK, (const char *)payload) == 0) {                           //case for if backward button was pressed
-        int f = i + 20;
-        int g = i + 10;
-        if (f < 255) {
-           i += 20;
+        if (i <= 40 && i > -40) {
+          i = -40;
         }
-        else if (g < 255) {
-          i += 10;
+        else if (i <= 40 && i > 0) {
+          i = 0;
         }
-        else i = 255;
-        backward(i);
+        int f = i - 20;
+        if (f > -255) {
+          i -= 20;
+        }
+        else i = -255;
+        motion(i);
       }
       if (strcmp(RIGHT, (const char *)payload) == 0) {                          //case for if right button was pressed
-        if (j > 92) {
-          j = 92;
+        if (j > 95) {
+          j = 95;
         }
-        else j = 72;
+        else j = 70;
         turn(j);
       }
       if (strcmp(LEFT, (const char *)payload) == 0) {                           //case for if left button was pressed
-        if (j < 92) {
-          j = 92;
+        if (j < 95) {
+          j = 95;
         }
-        else j = 112;
+        else j = 120;
         turn(j);
       }
-      if (strcmp(STOP, (const char *)payload) == 0) {                           //case for if stop button was pressed
+      if (strcmp(STOP, (const char *)payload) == 0) {                           //case for if left button was pressed
         quit();
-      }
-      if (strcmp(SLOW, (const char *)payload) == 0) {                           //case for if slow button was pressed
-        int f = i - 20;
-        if (f > 0) {
-          i = i - 20;
-        }
-        else i = 0;
-        backMotor->setSpeed(i);
-        frontMotor->setSpeed(i);
       }
       if (strcmp(IMU, (const char *)payload) == 0) {                           //case for if IMU page button was pressed
         handleIMU();
@@ -259,20 +245,17 @@ void handleLED() {                                                              
   digitalWrite(LED_BUILTIN,!digitalRead(LED_BUILTIN));                                 //sets the state of the LED to the inverse of what it currently was)
 }
 
-void forward(uint8_t d) {                                                              //function for moving car forward
-  backMotor->run(FORWARD);
-  frontMotor->run(FORWARD);
-  backMotor->setSpeed(d);
-  frontMotor->setSpeed(d);
-  digitalWrite(LED_BUILTIN, HIGH);                         
-}
-
-void backward(uint8_t d) {                                                             //function for moving car backward
-  backMotor->run(BACKWARD);
-  frontMotor->run(BACKWARD);
-  backMotor->setSpeed(d);
-  frontMotor->setSpeed(d);
-  digitalWrite(LED_BUILTIN, LOW);
+void motion(int d) {
+  if (d > -10) {
+    backMotor->run(FORWARD);
+    frontMotor->run(FORWARD);
+  }
+  else if (d < 10) {
+    backMotor->run(BACKWARD);
+    frontMotor->run(BACKWARD);
+  }
+  backMotor->setSpeed(abs(d));
+  frontMotor->setSpeed(abs(d));
 }
 
 void turn(int k) {                                                                     //function for turning the car
