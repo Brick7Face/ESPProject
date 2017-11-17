@@ -384,5 +384,4 @@ void loop() {
   webSocket.loop();
   server.handleClient();
   WiFiClient client;
-  handleIMU();
 }
