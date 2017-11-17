@@ -274,7 +274,7 @@ void handleIMU() {                                                              
   String inf2 = "Magnetometer: " + String(magno) + " rad/s<br>";
   String inf3 = "Gyroscope: " + String(gy) + " dps<br>";
   String inf4 = "Temperature: " + String(temper) + " *C<br><br><br></p><h3>Extremes:</h3><p>Acceleration:<br>";
-  String maxMin = "Max: " + String(highAcc) + "<br><br>Min: " + String(lowAcc)+ "<br>Magnetometer:<br>Max: " + String(highMag) + "<br><br>Min: " + String(lowMag) + "<br>Gryoscope:<br>Max: " + String(highGyro) + "<br><br>Min: " + String(lowGyro) + "<br>Temperature:<br>Max: " + String(highTemp) + "<br>Min: " + String(lowTemp);
+  String maxMin = "Max: " + String(highAcc) + "<br>Min: " + String(lowAcc)+ "<br><br>Magnetometer:<br>Max: " + String(highMag) + "<br>Min: " + String(lowMag) + "<br><br>Gryoscope:<br>Max: " + String(highGyro) + "<br>Min: " + String(lowGyro) + "<br><br>Temperature:<br>Max: " + String(highTemp) + "<br>Min: " + String(lowTemp);
   String htmlEnd = "</p></body></html>";
   String info = html + inf1 + inf2 + inf3 + inf4 + maxMin + htmlEnd;
   server.send(200, "text/html", info);  
